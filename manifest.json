@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "Internship Tracker",
+  "version": "0.1.0",
+  "description": "Save internship postings and copy TSV rows in your clipboard.",
+  "permissions": ["storage", "activeTab", "scripting", "clipboardWrite"],
+  "action": {
+    "default_title": "Internship Tracker",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ]
+}

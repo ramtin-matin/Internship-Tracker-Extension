@@ -1,0 +1,24 @@
+.label {
+  display: block;
+  font-size: 12px;
+  margin-top: 10px;
+  margin-bottom: 6px;
+}
+
+.input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px;
+  font-size: 13px;
+}
+
+.status {
+  margin-top: 10px;
+  font-size: 12px;
+  opacity: 0.8;
+  text-align: center;
+}
+
+.container {
+  width: 300px;
+}
