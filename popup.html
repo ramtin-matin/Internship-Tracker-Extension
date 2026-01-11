@@ -7,7 +7,7 @@
   </head>
   <body>
     <div class="container">
-      <h1>Internship Tracker</h1>
+      <h1 style="text-align: center">Internship Tracker</h1>
       <label class="label">Company</label>
       <input id="company" class="input" type="text" placeholder="Company" />
 
@@ -19,10 +19,28 @@
         placeholder="e.g. Software Engineer Intern"
       />
 
+      <label class="label">Location</label>
+      <input id="location" class="input" type="text" placeholder="Optional" />
+
+      <label class="label">Status</label>
+      <select id="statusSelect" class="input">
+        <option value="Under Consideration" selected>
+          Under Consideration
+        </option>
+        <option value="Applied">Applied</option>
+        <option value="Rejected">Rejected</option>
+        <option value="Interviewing">Interviewing</option>
+        <option value="Offer">Offer</option>
+      </select>
+
+      <label class="label">Application Date</label>
+      <input id="date" class="input" type="date" />
+
       <label class="label">URL</label>
       <input id="url" class="input" type="text" />
 
-      <p id="status" class="status"></p>
+      <button id="saveCopyBtn" class="btn">Save + Copy</button>
+      <p id="msg" class="status"></p>
     </div>
 
     <script src="popup.js"></script>

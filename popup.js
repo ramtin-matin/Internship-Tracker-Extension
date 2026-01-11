@@ -56,17 +56,47 @@ function extractJobInfoFromPage() {
     company = filtered[0] || pieces[0] || "";
   }
 
-  // Make company look nicer (capitalize first letter)
+  // make company look nicer (capitalize first letter)
   company = company ? company[0].toUpperCase() + company.slice(1) : "";
 
   return { role, company, url };
 }
 
+// application date
+function getTodayYYYYMMDD() {
+  return new Date().toISOString().split("T")[0];
+}
+
+// clean up value for TSV
+function cleanTSVField(value) {
+  return String(value || "")
+    .replace(/\t/g, " ") // remove tabs
+    .replace(/\n/g, " ") // remove newlines
+    .trim();
+}
+
+// build TSV row using all values
+function buildTSVRow({ company, role, location, url, dateAdded, status }) {
+  const cols = [
+    cleanTSVField(company),
+    cleanTSVField(role),
+    cleanTSVField(location),
+    cleanTSVField(url),
+    cleanTSVField(dateAdded),
+    cleanTSVField(status),
+  ];
+  return cols.join("\t");
+}
+
 async function init() {
   const companyInput = document.getElementById("company");
   const roleInput = document.getElementById("role");
+  const dateInput = document.getElementById("date");
+  const statusSelect = document.getElementById("statusSelect");
+  const saveCopyBtn = document.getElementById("saveCopyBtn");
+  const locationInput = document.getElementById("location");
   const urlInput = document.getElementById("url");
-  const statusEl = document.getElementById("status");
+  const msg = document.getElementById("msg");
 
   const tab = await getActiveTab();
   urlInput.value = tab.url;
@@ -80,9 +110,33 @@ async function init() {
 
   companyInput.value = info.company || "";
   roleInput.value = info.role || "";
+  dateInput.value = getTodayYYYYMMDD();
+  // statusSelect.value = info.date || "";
   urlInput.value = info.url || tab.url;
 
-  statusEl.textContent = "Company + Role + URL loaded ";
+  msg.textContent = "Company + Role + Application Date + URL loaded ";
+
+  saveCopyBtn.addEventListener("click", async () => {
+    const entry = {
+      company: companyInput.value,
+      role: roleInput.value,
+      location: locationInput.value,
+      url: urlInput.value,
+      dateAdded: dateInput.value || getTodayYYYYMMDD(),
+      status: statusSelect.value,
+    };
+
+    // basic validation
+    if (!entry.company || !entry.role || !entry.url) {
+      msg.textContent = "Missing Company, Role, or URL.";
+      return;
+    }
+
+    const tsvRow = buildTSVRow(entry);
+    await navigator.clipboard.writeText(tsvRow);
+
+    msg.textContent = "Copied ✅";
+  });
 }
 
 init();

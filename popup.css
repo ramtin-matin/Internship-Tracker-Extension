@@ -22,3 +22,11 @@
 .container {
   width: 300px;
 }
+
+.btn {
+  width: 30%;
+  margin-top: 12px;
+  font-size: 12px;
+  padding: 5px;
+  cursor: pointer;
+}
