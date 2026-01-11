@@ -34,11 +34,6 @@ async function saveInternship(entry) {
   return { saved: true, duplicate: false };
 }
 
-async function debugPrintStorage() {
-  const all = await getAllInternships();
-  console.log("internships storage:", all);
-}
-
 async function getActiveTab() {
   const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
   return tabs[0];
@@ -125,18 +120,53 @@ function buildTSVRow({ company, role, location, url, dateAdded, status }) {
   return cols.join("\t");
 }
 
-async function init() {
-  const companyInput = document.getElementById("company");
-  const roleInput = document.getElementById("role");
-  const dateInput = document.getElementById("date");
-  const statusSelect = document.getElementById("statusSelect");
-  const saveCopyBtn = document.getElementById("saveCopyBtn");
-  const locationInput = document.getElementById("location");
-  const urlInput = document.getElementById("url");
-  const msg = document.getElementById("msg");
+function renderHistory(internships) {
+  const historyEl = document.getElementById("history");
 
+  const entries = Object.values(internships);
+
+  const getDate = (e) => e.dateAdded || "0000-00-00";
+  // compare with todays date
+  entries.sort((a, b) => getDate(b).localeCompare(getDate(a)));
+
+  const lastFive = entries.slice(0, 5);
+
+  if (lastFive.length === 0) {
+    historyEl.innerHTML = `<p class="muted">No saved internships yet.</p>`;
+    return;
+  }
+
+  historyEl.innerHTML = lastFive
+    .map((e) => {
+      return `
+        <div class="history-item">
+          <div>
+            <div class="history-company">${e.company}</div>
+            <div class="history-role">${e.role}</div>
+          </div>
+          <button class="delete-btn" data-url="${e.url}">Delete</button>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function getEls() {
+  return {
+    company: document.getElementById("company"),
+    role: document.getElementById("role"),
+    location: document.getElementById("location"),
+    date: document.getElementById("date"),
+    status: document.getElementById("statusSelect"),
+    url: document.getElementById("url"),
+    saveBtn: document.getElementById("saveCopyBtn"),
+    msg: document.getElementById("msg"),
+  };
+}
+
+async function autofillFromPage(els) {
   const tab = await getActiveTab();
-  urlInput.value = tab.url;
+  els.url.value = tab.url;
 
   const results = await chrome.scripting.executeScript({
     target: { tabId: tab.id },
@@ -145,38 +175,54 @@ async function init() {
 
   const info = results?.[0]?.result || {};
 
-  companyInput.value = info.company || "";
-  roleInput.value = info.role || "";
-  dateInput.value = getTodayYYYYMMDD();
-  // statusSelect.value = info.date || "";
-  urlInput.value = info.url || tab.url;
+  els.company.value = info.company || "";
+  els.role.value = info.role || "";
+  els.date.value = getTodayYYYYMMDD();
+  els.url.value = info.url || tab.url;
+}
 
-  msg.textContent = "Company + Role + Application Date + URL loaded ";
+function buildEntryFromInputs(els) {
+  return {
+    company: els.company.value,
+    role: els.role.value,
+    location: els.location.value,
+    url: els.url.value,
+    dateAdded: els.date.value || getTodayYYYYMMDD(),
+    status: els.status.value,
+  };
+}
 
-  saveCopyBtn.addEventListener("click", async () => {
-    const entry = {
-      company: companyInput.value,
-      role: roleInput.value,
-      location: locationInput.value,
-      url: urlInput.value,
-      dateAdded: dateInput.value || getTodayYYYYMMDD(),
-      status: statusSelect.value,
-    };
+async function refreshHistory() {
+  const all = await getAllInternships();
+  renderHistory(all);
+  console.log("internships storage:", all);
+}
 
-    // basic validation
+async function init() {
+  const els = getEls();
+
+  await autofillFromPage(els);
+  await refreshHistory();
+
+  els.msg.textContent = "Company + Role + Application Date + URL loaded";
+
+  els.saveBtn.addEventListener("click", async () => {
+    const entry = buildEntryFromInputs(els);
+
     if (!entry.company || !entry.role || !entry.url) {
-      msg.textContent = "Missing Company, Role, or URL.";
+      els.msg.textContent = "Missing Company, Role, or URL.";
       return;
     }
 
     const saveResult = await saveInternship(entry);
     const tsvRow = buildTSVRow(entry);
     await navigator.clipboard.writeText(tsvRow);
-    await debugPrintStorage();
 
-    msg.textContent = saveResult.duplicate
+    await refreshHistory();
+
+    els.msg.textContent = saveResult.duplicate
       ? "Already saved — copied again ✅"
-      : "Saved ✅ Copied ✅";
+      : "Saved and copied ✅";
   });
 }
 
