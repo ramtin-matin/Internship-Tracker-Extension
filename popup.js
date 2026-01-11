@@ -2,6 +2,43 @@
 
 // "brain" of the popup UI
 
+const STORAGE_KEY = "internships";
+
+async function getAllInternships() {
+  const result = await chrome.storage.local.get([STORAGE_KEY]);
+  return result[STORAGE_KEY] || {};
+}
+
+async function isDuplicate(url) {
+  const all = await getAllInternships();
+  return Boolean(all[url]);
+}
+
+async function saveInternship(entry) {
+  const all = await getAllInternships();
+
+  const url = entry.url;
+  if (!url) throw new Error("Missing entry.url");
+
+  const duplicate = Boolean(all[url]);
+  if (duplicate) {
+    return { saved: false, duplicate: true };
+  }
+
+  all[url] = entry;
+
+  await chrome.storage.local.set({
+    [STORAGE_KEY]: all,
+  });
+
+  return { saved: true, duplicate: false };
+}
+
+async function debugPrintStorage() {
+  const all = await getAllInternships();
+  console.log("internships storage:", all);
+}
+
 async function getActiveTab() {
   const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
   return tabs[0];
@@ -132,10 +169,14 @@ async function init() {
       return;
     }
 
+    const saveResult = await saveInternship(entry);
     const tsvRow = buildTSVRow(entry);
     await navigator.clipboard.writeText(tsvRow);
+    await debugPrintStorage();
 
-    msg.textContent = "Copied ✅";
+    msg.textContent = saveResult.duplicate
+      ? "Already saved — copied again ✅"
+      : "Saved ✅ Copied ✅";
   });
 }
 
