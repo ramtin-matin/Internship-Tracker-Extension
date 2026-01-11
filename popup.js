@@ -151,6 +151,17 @@ function renderHistory(internships) {
     .join("");
 }
 
+async function deleteInternship(url) {
+  const all = await getAllInternships();
+  delete all[url];
+
+  await chrome.storage.local.set({
+    [STORAGE_KEY]: all,
+  });
+
+  return all;
+}
+
 function getEls() {
   return {
     company: document.getElementById("company"),
@@ -205,6 +216,20 @@ async function init() {
   await refreshHistory();
 
   els.msg.textContent = "Company + Role + Application Date + URL loaded";
+
+  const historyEl = document.getElementById("history");
+
+  historyEl.addEventListener("click", async (e) => {
+    const btn = e.target.closest(".delete-btn");
+    if (!btn) return;
+
+    const url = btn.dataset.url;
+
+    const all = await deleteInternship(url);
+    renderHistory(all);
+
+    els.msg.textContent = "Deleted ✅";
+  });
 
   els.saveBtn.addEventListener("click", async () => {
     const entry = buildEntryFromInputs(els);
