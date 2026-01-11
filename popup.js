@@ -112,9 +112,9 @@ function buildTSVRow({ company, role, location, url, dateAdded, status }) {
   const cols = [
     cleanTSVField(company),
     cleanTSVField(role),
+    cleanTSVField(dateAdded),
     cleanTSVField(location),
     cleanTSVField(url),
-    cleanTSVField(dateAdded),
     cleanTSVField(status),
   ];
   return cols.join("\t");
@@ -126,8 +126,10 @@ function renderHistory(internships) {
   const entries = Object.values(internships);
 
   const getDate = (e) => e.dateAdded || "0000-00-00";
-  // compare with todays date
+
+  // sort oldest to newest and then reverse so newest is on top
   entries.sort((a, b) => getDate(b).localeCompare(getDate(a)));
+  entries.reverse();
 
   const lastFive = entries.slice(0, 5);
 
@@ -162,6 +164,21 @@ async function deleteInternship(url) {
   return all;
 }
 
+async function copyAllTsv() {
+  const all = (await chrome.storage.local.get([STORAGE_KEY]))
+    ? result[STORAGE_KEY]
+    : {};
+
+  const tsvRow = buildTSVRow(all);
+  await navigator.clipboard.writeText(tsvRow);
+
+  els.msg.textContent = "copied ✅";
+}
+
+function buildAllTSV(entries) {
+  return entries.map(buildTSVRow).join("\n\n");
+}
+
 function getEls() {
   return {
     company: document.getElementById("company"),
@@ -172,6 +189,7 @@ function getEls() {
     url: document.getElementById("url"),
     saveBtn: document.getElementById("saveCopyBtn"),
     msg: document.getElementById("msg"),
+    copyTsvBtn: document.getElementById("copyTsvBtn"),
   };
 }
 
@@ -229,6 +247,25 @@ async function init() {
     renderHistory(all);
 
     els.msg.textContent = "Deleted ✅";
+  });
+
+  els.copyTsvBtn.addEventListener("click", async () => {
+    const all = await getAllInternships();
+    const entries = Object.values(all);
+
+    if (entries.length === 0) {
+      els.msg.textContent = "No internships saved yet.";
+      return;
+    }
+
+    // sort newest first
+    const getDate = (e) => e.dateAdded || "0000-00-00";
+    entries.sort((a, b) => getDate(b).localeCompare(getDate(a)));
+
+    const allTsv = buildAllTSV(entries);
+    await navigator.clipboard.writeText(allTsv);
+
+    els.msg.textContent = `Copied ${entries.length} rows ✅`;
   });
 
   els.saveBtn.addEventListener("click", async () => {

@@ -12,6 +12,12 @@
   font-size: 13px;
 }
 
+.button-container {
+  margin-top: 4px;
+  display: flex;
+  justify-content: space-around;
+}
+
 .status {
   margin-top: 10px;
   font-size: 12px;
