@@ -1,19 +1,16 @@
-// Popup = UI layer
-
-// "brain" of the popup UI
+// ==============================
+// storage (chrome.storage.local)
+// ==============================
 
 const STORAGE_KEY = "internships";
 
+// get saved internships dictionary (keyed by url)
 async function getAllInternships() {
   const result = await chrome.storage.local.get([STORAGE_KEY]);
   return result[STORAGE_KEY] || {};
 }
 
-async function isDuplicate(url) {
-  const all = await getAllInternships();
-  return Boolean(all[url]);
-}
-
+// save a new internship (dedupe by url)
 async function saveInternship(entry) {
   const all = await getAllInternships();
 
@@ -21,9 +18,7 @@ async function saveInternship(entry) {
   if (!url) throw new Error("Missing entry.url");
 
   const duplicate = Boolean(all[url]);
-  if (duplicate) {
-    return { saved: false, duplicate: true };
-  }
+  if (duplicate) return { saved: false, duplicate: true };
 
   all[url] = entry;
 
@@ -34,46 +29,54 @@ async function saveInternship(entry) {
   return { saved: true, duplicate: false };
 }
 
+// delete internship by url
+async function deleteInternship(url) {
+  const all = await getAllInternships();
+  delete all[url];
+
+  await chrome.storage.local.set({
+    [STORAGE_KEY]: all,
+  });
+
+  return all;
+}
+
+// ==============================
+// chrome helpers
+// ==============================
+
+// get the currently active browser tab
 async function getActiveTab() {
   const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
   return tabs[0];
 }
 
+// ==============================
+// extraction (runs in job page)
+// ==============================
+
+// extract role + company from job posting page
 function extractJobInfoFromPage() {
   const url = window.location.href;
   const { hostname, pathname } = window.location;
 
-  // ROLE
+  // role: prefer h1, fallback to page title
   const h1 = document.querySelector("h1");
   const roleFromH1 = h1 ? h1.innerText.trim() : "";
   const role = roleFromH1 || document.title.trim();
 
-  // COMPANY
+  // company: detect common job boards by url pattern
   let company = "";
-
-  // split URL into pieces and grab company name
   const firstPathSegment = pathname.split("/").filter(Boolean)[0] || "";
 
-  // Lever: jobs.lever.co/<company>/<jobId>
-  if (hostname.includes("jobs.lever.co")) {
+  if (hostname.includes("jobs.lever.co")) company = firstPathSegment;
+  else if (hostname.includes("boards.greenhouse.io"))
     company = firstPathSegment;
-  }
-
-  // Greenhouse: boards.greenhouse.io/<company>/jobs/<id>
-  else if (hostname.includes("boards.greenhouse.io")) {
-    company = firstPathSegment;
-  }
-
-  // Ahsby: jobs.ashbyhq.com/<company>/<jobId>
-  else if (hostname.includes("jobs.ashbyhq.com")) {
-    company = firstPathSegment;
-  }
-
-  // Fallback: derive from hostname (careers.google.com -> google)
+  else if (hostname.includes("jobs.ashbyhq.com")) company = firstPathSegment;
   else {
+    // fallback: derive company name from hostname
     const pieces = hostname.split(".").filter(Boolean);
 
-    // remove common subdomains
     const blacklist = new Set([
       "www",
       "jobs",
@@ -84,30 +87,51 @@ function extractJobInfoFromPage() {
     ]);
     const filtered = pieces.filter((p) => !blacklist.has(p.toLowerCase()));
 
-    // take first meaningful segment
     company = filtered[0] || pieces[0] || "";
   }
 
-  // make company look nicer (capitalize first letter)
+  // basic formatting
   company = company ? company[0].toUpperCase() + company.slice(1) : "";
 
   return { role, company, url };
 }
 
-// application date
+// ==============================
+// utils (formatting / exporting)
+// ==============================
+
+// current date in yyyy-mm-dd
 function getTodayYYYYMMDD() {
   return new Date().toISOString().split("T")[0];
 }
 
-// clean up value for TSV
+// make a value safe for tsv (no tabs/newlines)
 function cleanTSVField(value) {
   return String(value || "")
-    .replace(/\t/g, " ") // remove tabs
-    .replace(/\n/g, " ") // remove newlines
+    .replace(/\t/g, " ")
+    .replace(/\n/g, " ")
     .trim();
 }
 
-// build TSV row using all values
+// remove tracking bits from url to improve duplicate detection
+function normalizeUrl(url) {
+  if (!url) return "";
+
+  // remove hash (#something)
+  url = url.split("#")[0];
+
+  // remove utm_* tracking params
+  const [base, query] = url.split("?");
+  if (!query) return base;
+
+  const keptParams = query
+    .split("&")
+    .filter((p) => !p.toLowerCase().startsWith("utm_"));
+
+  return keptParams.length ? `${base}?${keptParams.join("&")}` : base;
+}
+
+// build one spreadsheet-ready tsv row
 function buildTSVRow({ company, role, location, url, dateAdded, status }) {
   const cols = [
     cleanTSVField(company),
@@ -120,6 +144,31 @@ function buildTSVRow({ company, role, location, url, dateAdded, status }) {
   return cols.join("\t");
 }
 
+// build multiline tsv (one row per line)
+function buildAllTSV(entries) {
+  return entries.map(buildTSVRow).join("\n");
+}
+
+// ==============================
+// popup ui helpers
+// ==============================
+
+// grab popup elements once
+function getEls() {
+  return {
+    company: document.getElementById("company"),
+    role: document.getElementById("role"),
+    location: document.getElementById("location"),
+    date: document.getElementById("date"),
+    status: document.getElementById("statusSelect"),
+    url: document.getElementById("url"),
+    saveBtn: document.getElementById("saveCopyBtn"),
+    msg: document.getElementById("msg"),
+    copyTsvBtn: document.getElementById("copyTsvBtn"),
+  };
+}
+
+// render last 5 saved internships in the popup
 function renderHistory(internships) {
   const historyEl = document.getElementById("history");
 
@@ -127,7 +176,7 @@ function renderHistory(internships) {
 
   const getDate = (e) => e.dateAdded || "0000-00-00";
 
-  // sort oldest to newest and then reverse so newest is on top
+  // sort newest first
   entries.sort((a, b) => getDate(b).localeCompare(getDate(a)));
 
   const lastFive = entries.slice(0, 5);
@@ -152,35 +201,7 @@ function renderHistory(internships) {
     .join("");
 }
 
-async function deleteInternship(url) {
-  const all = await getAllInternships();
-  delete all[url];
-
-  await chrome.storage.local.set({
-    [STORAGE_KEY]: all,
-  });
-
-  return all;
-}
-
-function buildAllTSV(entries) {
-  return entries.map(buildTSVRow).join("\n");
-}
-
-function getEls() {
-  return {
-    company: document.getElementById("company"),
-    role: document.getElementById("role"),
-    location: document.getElementById("location"),
-    date: document.getElementById("date"),
-    status: document.getElementById("statusSelect"),
-    url: document.getElementById("url"),
-    saveBtn: document.getElementById("saveCopyBtn"),
-    msg: document.getElementById("msg"),
-    copyTsvBtn: document.getElementById("copyTsvBtn"),
-  };
-}
-
+// autofill company/role/url from the active tab
 async function autofillFromPage(els) {
   const tab = await getActiveTab();
   els.url.value = tab.url;
@@ -198,42 +219,27 @@ async function autofillFromPage(els) {
   els.url.value = info.url || tab.url;
 }
 
+// read inputs and build entry object
 function buildEntryFromInputs(els) {
   return {
-    company: els.company.value,
-    role: els.role.value,
-    location: els.location.value,
-    url: normalizeUrl(els.url.value),
+    company: els.company.value.trim(),
+    role: els.role.value.trim(),
+    location: els.location.value.trim(),
+    url: normalizeUrl(els.url.value.trim()),
     dateAdded: (els.date.value || getTodayYYYYMMDD()).trim(),
-    status: els.status.value,
+    status: els.status.value.trim(),
   };
 }
 
-// clean up URL
-function normalizeUrl(url) {
-  if (!url) return "";
-
-  // take away everything after the hashtag in the URL
-  url = url.split("#")[0];
-
-  // remove any utm_* tracking params, split it into a base and query string
-  const [base, query] = url.split("?");
-  if (!query) return base;
-
-  // in the query string, filter through parameters
-  const keptParams = query
-    .split("&")
-    .filter((p) => !p.toLowerCase().startsWith("utm_"));
-
-  // If there are params left, return base?params, otherwise, return base
-  return keptParams.length ? `${base}?${keptParams.join("&")}` : base;
-}
-
+// refresh popup history ui
 async function refreshHistory() {
   const all = await getAllInternships();
   renderHistory(all);
-  console.log("internships storage:", all);
 }
+
+// ==============================
+// init + event handlers
+// ==============================
 
 async function init() {
   const els = getEls();
@@ -245,7 +251,7 @@ async function init() {
 
   const historyEl = document.getElementById("history");
 
-  // DELETE BUTTON HANDLER
+  // delete button handler (event delegation)
   historyEl.addEventListener("click", async (e) => {
     const btn = e.target.closest(".delete-btn");
     if (!btn) return;
@@ -258,7 +264,7 @@ async function init() {
     els.msg.textContent = "Deleted ✅";
   });
 
-  // COPY TSV BUTTON HANDLER
+  // copy all tsv handler
   els.copyTsvBtn.addEventListener("click", async () => {
     const all = await getAllInternships();
     const entries = Object.values(all);
@@ -278,7 +284,7 @@ async function init() {
     els.msg.textContent = `Copied ${entries.length} rows ✅`;
   });
 
-  // SAVE BUTTON HANDLER
+  // save + copy handler
   els.saveBtn.addEventListener("click", async () => {
     const entry = buildEntryFromInputs(els);
 
@@ -288,6 +294,7 @@ async function init() {
     }
 
     const saveResult = await saveInternship(entry);
+
     const tsvRow = buildTSVRow(entry);
     await navigator.clipboard.writeText(tsvRow);
 
