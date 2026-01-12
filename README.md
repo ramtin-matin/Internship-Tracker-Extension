@@ -40,7 +40,7 @@ The extension consists of a popup UI and a content script that runs on web pages
 
 1.  Navigate to a job posting you want to save.
 2.  Click the Internship Tracker extension icon in your toolbar.
-3.  The popup will appear, with the Company, Role, and URL fields automatically filled.
+3.  The popup will appear, with the Company, Role, and URL fields automatically filled. (although for now Role isn't accurately filled, so double check)
 4.  Verify the auto-filled information and fill in the remaining fields (Location, Status). The date is automatically set to today.
 5.  Click **Save + Copy**. The application is now saved, and a TSV row is copied to your clipboard.
 6.  Paste the row directly into your spreadsheet (e.g., Google Sheets, Excel).
