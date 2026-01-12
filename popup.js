@@ -129,7 +129,6 @@ function renderHistory(internships) {
 
   // sort oldest to newest and then reverse so newest is on top
   entries.sort((a, b) => getDate(b).localeCompare(getDate(a)));
-  entries.reverse();
 
   const lastFive = entries.slice(0, 5);
 
@@ -164,19 +163,8 @@ async function deleteInternship(url) {
   return all;
 }
 
-async function copyAllTsv() {
-  const all = (await chrome.storage.local.get([STORAGE_KEY]))
-    ? result[STORAGE_KEY]
-    : {};
-
-  const tsvRow = buildTSVRow(all);
-  await navigator.clipboard.writeText(tsvRow);
-
-  els.msg.textContent = "copied ✅";
-}
-
 function buildAllTSV(entries) {
-  return entries.map(buildTSVRow).join("\n\n");
+  return entries.map(buildTSVRow).join("\n");
 }
 
 function getEls() {
@@ -215,10 +203,30 @@ function buildEntryFromInputs(els) {
     company: els.company.value,
     role: els.role.value,
     location: els.location.value,
-    url: els.url.value,
-    dateAdded: els.date.value || getTodayYYYYMMDD(),
+    url: normalizeUrl(els.url.value),
+    dateAdded: (els.date.value || getTodayYYYYMMDD()).trim(),
     status: els.status.value,
   };
+}
+
+// clean up URL
+function normalizeUrl(url) {
+  if (!url) return "";
+
+  // take away everything after the hashtag in the URL
+  url = url.split("#")[0];
+
+  // remove any utm_* tracking params, split it into a base and query string
+  const [base, query] = url.split("?");
+  if (!query) return base;
+
+  // in the query string, filter through parameters
+  const keptParams = query
+    .split("&")
+    .filter((p) => !p.toLowerCase().startsWith("utm_"));
+
+  // If there are params left, return base?params, otherwise, return base
+  return keptParams.length ? `${base}?${keptParams.join("&")}` : base;
 }
 
 async function refreshHistory() {
@@ -237,6 +245,7 @@ async function init() {
 
   const historyEl = document.getElementById("history");
 
+  // DELETE BUTTON HANDLER
   historyEl.addEventListener("click", async (e) => {
     const btn = e.target.closest(".delete-btn");
     if (!btn) return;
@@ -249,6 +258,7 @@ async function init() {
     els.msg.textContent = "Deleted ✅";
   });
 
+  // COPY TSV BUTTON HANDLER
   els.copyTsvBtn.addEventListener("click", async () => {
     const all = await getAllInternships();
     const entries = Object.values(all);
@@ -268,6 +278,7 @@ async function init() {
     els.msg.textContent = `Copied ${entries.length} rows ✅`;
   });
 
+  // SAVE BUTTON HANDLER
   els.saveBtn.addEventListener("click", async () => {
     const entry = buildEntryFromInputs(els);
 
