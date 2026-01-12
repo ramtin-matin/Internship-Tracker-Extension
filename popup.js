@@ -190,7 +190,7 @@ function renderHistory(internships) {
     .map((e) => {
       return `
         <div class="history-item">
-          <div>
+          <div class="history-content">
             <div class="history-company">${e.company}</div>
             <div class="history-role">${e.role}</div>
           </div>
