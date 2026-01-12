@@ -4,14 +4,14 @@
   "version": "0.1.0",
   "description": "Save internship postings and copy TSV rows in your clipboard.",
   "permissions": ["storage", "activeTab", "scripting", "clipboardWrite"],
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
   "action": {
     "default_title": "Internship Tracker",
     "default_popup": "popup.html"
-  },
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"]
-    }
-  ]
+  }
 }

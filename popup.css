@@ -76,6 +76,12 @@ h1 {
   margin-top: 8px;
 }
 
+.title-container {
+  display: flex;
+  gap: 30px;
+  margin-top: 8px;
+}
+
 .btn {
   flex: 1;
   padding: 10px;
