@@ -127,15 +127,14 @@ function normalizeUrl(url) {
   return keptParams.length ? `${base}?${keptParams.join("&")}` : base;
 }
 
-// column order
-// Company | Role | Location | URL | Date Added | Status
+// build one spreadsheet-ready tsv row
 function buildTSVRow({ company, role, location, url, dateAdded, status }) {
   const cols = [
     cleanTSVField(company),
     cleanTSVField(role),
+    cleanTSVField(dateAdded),
     cleanTSVField(location),
     cleanTSVField(url),
-    cleanTSVField(dateAdded),
     cleanTSVField(status),
   ];
   return cols.join("\t");
