@@ -20,6 +20,7 @@ async function saveInternship(entry) {
   const duplicate = Boolean(all[url]);
   if (duplicate) return { saved: false, duplicate: true };
 
+  entry.createdAt = Date.now();
   all[url] = entry;
 
   await chrome.storage.local.set({
@@ -174,10 +175,10 @@ function renderHistory(internships) {
 
   const entries = Object.values(internships);
 
-  const getDate = (e) => e.dateAdded || "0000-00-00";
+  const getCreatedAt = (e) => e.createdAt || 0;
 
   // sort newest first
-  entries.sort((a, b) => getDate(b).localeCompare(getDate(a)));
+  entries.sort((a, b) => getCreatedAt(b) - getCreatedAt(a));
 
   const lastFive = entries.slice(0, 5);
 
@@ -187,6 +188,39 @@ function renderHistory(internships) {
   }
 
   historyEl.innerHTML = lastFive
+    .map((e) => {
+      return `
+        <div class="history-item">
+          <div class="history-content">
+            <div class="history-company">${e.company}</div>
+            <div class="history-role">${e.role}</div>
+          </div>
+          <button class="delete-btn" data-url="${e.url}">Delete</button>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+// render all internships
+function renderAll(internships) {
+  const manageList = document.getElementById("manageList");
+
+  const entries = Object.values(internships);
+
+  const getCreatedAt = (e) => e.createdAt || 0;
+
+  // sort newest first
+  entries.sort((a, b) => getCreatedAt(b) - getCreatedAt(a));
+
+  const all = entries;
+
+  if (all.length === 0) {
+    manageList.innerHTML = `<p class="muted">No saved internships yet.</p>`;
+    return;
+  }
+
+  manageList.innerHTML = all
     .map((e) => {
       return `
         <div class="history-item">
@@ -235,6 +269,26 @@ function buildEntryFromInputs(els) {
 async function refreshHistory() {
   const all = await getAllInternships();
   renderHistory(all);
+  renderAll(all);
+}
+
+function showView(id) {
+  document.getElementById("view-main").style.display = "none";
+  document.getElementById("view-manage").style.display = "none";
+  document.getElementById(id).style.display = "block";
+}
+
+async function handleDeleteClick(e, els) {
+  const btn = e.target.closest(".delete-btn");
+  if (!btn) return;
+
+  const url = btn.dataset.url;
+
+  const all = await deleteInternship(url);
+  renderHistory(all);
+  renderAll(all);
+
+  els.msg.textContent = "Deleted ✅";
 }
 
 // ==============================
@@ -249,19 +303,23 @@ async function init() {
 
   els.msg.textContent = "Company + Role + Application Date + URL loaded";
 
+  els.manageBtn = document.getElementById("manageBtn");
+  els.backBtn = document.getElementById("backBtn");
+
+  // manage btn / back btn handler
+  els.manageBtn.addEventListener("click", () => showView("view-manage"));
+  els.backBtn.addEventListener("click", () => showView("view-main"));
+
+  // delete button handler for last 5 list (event delegation)
   const historyEl = document.getElementById("history");
-
-  // delete button handler (event delegation)
   historyEl.addEventListener("click", async (e) => {
-    const btn = e.target.closest(".delete-btn");
-    if (!btn) return;
+    await handleDeleteClick(e, els);
+  });
 
-    const url = btn.dataset.url;
-
-    const all = await deleteInternship(url);
-    renderHistory(all);
-
-    els.msg.textContent = "Deleted ✅";
+  // delete button handler for manage list (event delegation)
+  const manageList = document.getElementById("manageList");
+  manageList.addEventListener("click", async (e) => {
+    await handleDeleteClick(e, els);
   });
 
   // copy all tsv handler
@@ -275,8 +333,8 @@ async function init() {
     }
 
     // sort newest first
-    const getDate = (e) => e.dateAdded || "0000-00-00";
-    entries.sort((a, b) => getDate(b).localeCompare(getDate(a)));
+    const getCreatedAt = (e) => e.createdAt || 0;
+    entries.sort((a, b) => getCreatedAt(b) - getCreatedAt(a));
 
     const allTsv = buildAllTSV(entries);
     await navigator.clipboard.writeText(allTsv);
@@ -297,7 +355,6 @@ async function init() {
 
     const tsvRow = buildTSVRow(entry);
     await navigator.clipboard.writeText(tsvRow);
-
     await refreshHistory();
 
     els.msg.textContent = saveResult.duplicate

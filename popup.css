@@ -12,7 +12,12 @@
 }
 
 body {
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
     sans-serif;
   background-color: var(--bg);
   color: var(--text-main);
@@ -22,7 +27,7 @@ body {
 }
 
 .container {
-  width: 320px;
+  width: 300px;
 }
 
 h1 {
@@ -73,7 +78,6 @@ h1 {
 .button-container {
   display: flex;
   gap: 10px;
-  margin-top: 8px;
 }
 
 .title-container {
@@ -113,6 +117,40 @@ h1 {
   transform: translateY(0);
 }
 
+#backBtn {
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  box-shadow: var(--shadow);
+}
+
+#backBtn:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+#backBtn:active {
+  transform: translateY(0);
+}
+
+#manageBtn {
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  box-shadow: var(--shadow);
+  margin: auto;
+  padding: 10px;
+}
+
+#manageBtn:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+#manageBtn:active {
+  transform: translateY(0);
+}
+
 #copyTsvBtn {
   background-color: #fff;
   color: var(--text-main);
@@ -149,6 +187,7 @@ h1 {
 /* --- History List --- */
 .history-item {
   display: flex;
+  max-width: 360px;
   justify-content: space-between;
   align-items: center;
   padding: 12px;

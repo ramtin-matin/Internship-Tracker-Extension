@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
     <meta charset="UTF-8" />
@@ -13,51 +13,73 @@
         </div>
         <h1 style="text-align: center">Internship Tracker</h1>
       </div>
-      <label class="label">Company</label>
-      <input id="company" class="input" type="text" placeholder="Company" />
+      <div id="view-main">
+        <label class="label">Company</label>
+        <input id="company" class="input" type="text" placeholder="Company" />
 
-      <label class="label">Role</label>
-      <input
-        id="role"
-        class="input"
-        type="text"
-        placeholder="e.g. Software Engineer Intern"
-      />
+        <label class="label">Role</label>
+        <input
+          id="role"
+          class="input"
+          type="text"
+          placeholder="e.g. Software Engineer Intern"
+        />
 
-      <label class="label">Location</label>
-      <input
-        id="location"
-        class="input"
-        type="text"
-        placeholder="Location..."
-      />
+        <label class="label">Location</label>
+        <input
+          id="location"
+          class="input"
+          type="text"
+          placeholder="Location..."
+        />
 
-      <label class="label">Status</label>
-      <select id="statusSelect" class="input">
-        <option value="Applied" selected>Applied</option>
-        <option value="Under Consideration">Under Consideration</option>
-        <option value="Rejected">Rejected</option>
-        <option value="Interviewing">Interviewing</option>
-        <option value="Offer">Offer</option>
-      </select>
+        <label class="label">Status</label>
+        <select id="statusSelect" class="input">
+          <option value="Applied" selected>Applied</option>
+          <option value="Under Consideration">Under Consideration</option>
+          <option value="Rejected">Rejected</option>
+          <option value="Interviewing">Interviewing</option>
+          <option value="Offer">Offer</option>
+        </select>
 
-      <label class="label">Application Date</label>
-      <input id="date" class="input" type="date" />
+        <label class="label">Application Date</label>
+        <input id="date" class="input" type="date" />
 
-      <label class="label">URL</label>
-      <input id="url" class="input" type="text" />
+        <label class="label">URL</label>
+        <input id="url" class="input" type="text" />
 
-      <div class="button-container">
-        <button id="saveCopyBtn" class="btn">Save + Copy</button>
+        <div class="button-container">
+          <button id="saveCopyBtn" class="btn">Save + Copy</button>
 
-        <button id="copyTsvBtn" class="btn">Copy All TSV</button>
+          <button id="copyTsvBtn" class="btn">Copy All TSV</button>
+        </div>
+        <p id="msg" class="status">Lets get started!</p>
+
+        <hr class="divider" />
+        <div class="button-container" style="margin-bottom: 8px">
+          <h2 class="section-title">Saved (last 5)</h2>
+          <button id="manageBtn" class="btn">Manage</button>
+        </div>
+        <div id="history"></div>
       </div>
-      <p id="msg" class="status"></p>
+      <div id="view-manage" style="display: none">
+        <p id="msg" class="status">Lets get started!</p>
+        <div class="title-container">
+          <button id="backBtn" class="btn">Back</button>
+          <h2 class="manage-title">Manage</h2>
+        </div>
+        <hr class="divider" />
 
-      <hr class="divider" />
-
-      <h2 class="section-title">Saved (last 5)</h2>
-      <div id="history"></div>
+        <input id="searchManage" class="input" placeholder="Search..." />
+        <div id="manageList"></div>
+      </div>
+      <div id="view-manage" style="display: none">
+        <div class="title-container">
+          <button id="backBtn" class="btn">Back</button>
+          <h2 class="manage-title">Manage</h2>
+        </div>
+        <hr class="divider" />
+      </div>
     </div>
 
     <script src="popup.js"></script>
