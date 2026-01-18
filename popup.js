@@ -518,7 +518,11 @@ async function init() {
   // copy all TSV
   els.copyTsvBtn?.addEventListener("click", async () => {
     const all = await getAllInternships();
-    const entries = sortNewestFirst(Object.values(all));
+    const entries = Object.values(all);
+
+    // have newer applied applications at the bottom rather than top for spreadsheet
+    const key = (e) => e.createdAt || 0;
+    entries.sort((a, b) => key(a) - key(b));
 
     if (entries.length === 0) {
       if (els.msg) els.msg.textContent = "No internships saved yet.";
