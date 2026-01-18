@@ -5,83 +5,139 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="popup.css" />
   </head>
+
   <body>
     <div class="container">
-      <div class="title-container">
-        <div>
-          <img src="icons/icon128.png" style="width: 48px; height: 48px" />
+      <!-- Header -->
+      <header class="app-header">
+        <div class="header-content">
+          <img
+            src="icons/icon128.png"
+            class="app-logo"
+            onerror="this.style.display = 'none'"
+          />
+          <h1 class="brand-name">Internship Tracker</h1>
         </div>
-        <h1 style="text-align: center">Internship Tracker</h1>
-      </div>
-      <div id="view-main">
-        <label class="label">Company</label>
-        <input id="company" class="input" type="text" placeholder="Company" />
+      </header>
 
-        <label class="label">Role</label>
-        <input
-          id="role"
-          class="input"
-          type="text"
-          placeholder="e.g. Software Engineer Intern"
-        />
+      <!-- ===================== -->
+      <!-- MAIN VIEW -->
+      <!-- ===================== -->
+      <div id="view-main" class="view">
+        <div class="form-container">
+          <div class="input-group full">
+            <label class="label">Company</label>
+            <input
+              id="company"
+              class="input"
+              type="text"
+              placeholder="e.g. Google"
+            />
+          </div>
 
-        <label class="label">Location</label>
-        <input
-          id="location"
-          class="input"
-          type="text"
-          placeholder="Location..."
-        />
+          <div class="input-group full">
+            <label class="label">Role</label>
+            <input
+              id="role"
+              class="input"
+              type="text"
+              placeholder="e.g. Software Engineer Intern"
+            />
+          </div>
 
-        <label class="label">Status</label>
-        <select id="statusSelect" class="input">
-          <option value="Applied" selected>Applied</option>
-          <option value="Under Consideration">Under Consideration</option>
-          <option value="Rejected">Rejected</option>
-          <option value="Interviewing">Interviewing</option>
-          <option value="Offer">Offer</option>
-        </select>
+          <div class="grid-2">
+            <div class="input-group">
+              <label class="label">Location</label>
+              <input
+                id="location"
+                class="input"
+                type="text"
+                placeholder="Remote / NYC"
+              />
+            </div>
+            <div class="input-group">
+              <label class="label">Status</label>
+              <select id="statusSelect" class="input">
+                <option value="Applied" selected>Applied</option>
+                <option value="Under Consideration">Under Review</option>
+                <option value="Rejected">Rejected</option>
+                <option value="Interviewing">Interviewing</option>
+                <option value="Offer">Offer</option>
+              </select>
+            </div>
+          </div>
 
-        <label class="label">Application Date</label>
-        <input id="date" class="input" type="date" />
-
-        <label class="label">URL</label>
-        <input id="url" class="input" type="text" />
+          <div class="grid-2">
+            <div class="input-group">
+              <label class="label">Date</label>
+              <input id="date" class="input" type="date" />
+            </div>
+            <div class="input-group">
+              <label class="label">Job URL</label>
+              <input id="url" class="input" type="text" placeholder="Link" />
+            </div>
+          </div>
+        </div>
 
         <div class="button-container">
-          <button id="saveCopyBtn" class="btn">Save + Copy</button>
-
-          <button id="copyTsvBtn" class="btn">Copy All TSV</button>
+          <button id="saveCopyBtn" class="btn btn-primary">
+            Save & Copy Row
+          </button>
+          <button id="copyTsvBtn" class="btn btn-secondary">
+            Copy All TSV
+          </button>
         </div>
-        <p id="msg" class="status">Lets get started!</p>
+
+        <p id="msg" class="status-msg">Ready to track!</p>
 
         <hr class="divider" />
-        <div class="button-container" style="margin-bottom: 8px">
+
+        <div class="section-header">
           <h2 class="section-title">Saved (last 5)</h2>
-          <button id="manageBtn" class="btn">Manage</button>
+          <button id="manageBtn" class="text-link">View All</button>
         </div>
-        <div id="history"></div>
-      </div>
-      <div id="view-manage" style="display: none">
-        <p id="msg" class="status">Lets get started!</p>
-        <div class="title-container">
-          <button id="backBtn" class="btn">Back</button>
-          <h2 class="manage-title">Manage</h2>
-        </div>
-        <hr class="divider" />
 
-        <input id="searchManage" class="input" placeholder="Search..." />
-        <div id="manageList"></div>
-      </div>
-      <div id="view-manage" style="display: none">
-        <div class="title-container">
-          <button id="backBtn" class="btn">Back</button>
-          <h2 class="manage-title">Manage</h2>
+        <div id="history" class="history-list">
+          <!-- JS will inject items here with .history-item class -->
         </div>
-        <hr class="divider" />
+      </div>
+
+      <!-- ===================== -->
+      <!-- MANAGE VIEW -->
+      <!-- ===================== -->
+      <div id="view-manage" class="view" style="display: none">
+        <div class="view-header">
+          <button id="backToMainBtn" class="btn-circle">←</button>
+          <h2 class="view-title">Manage All</h2>
+        </div>
+        <div class="search-container">
+          <input
+            id="searchManage"
+            class="input search-input"
+            placeholder="Search internships..."
+          />
+        </div>
+        <div id="manageList" class="history-list scrollable">
+          <!-- JS will inject items here with .history-item class -->
+        </div>
+      </div>
+
+      <!-- ===================== -->
+      <!-- EDIT VIEW -->
+      <!-- ===================== -->
+      <div id="view-edit" class="view" style="display: none">
+        <div class="view-header">
+          <button id="backToManageBtn" class="btn-circle">←</button>
+          <h2 class="view-title">Save Changes</h2>
+        </div>
+        <div id="render-edit" class="edit-form-wrap">
+          <!-- JS will inject edit inputs here -->
+        </div>
+        <button id="saveEditBtn" class="btn btn-primary full-width">
+          Update Internship
+        </button>
       </div>
     </div>
-
     <script src="popup.js"></script>
   </body>
 </html>

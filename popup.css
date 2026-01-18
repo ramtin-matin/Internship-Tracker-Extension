@@ -1,228 +1,216 @@
-/* --- Theme Variables --- */
+/* --- Blue Professional Theme --- */
 :root {
   --primary: #2563eb;
   --primary-hover: #1d4ed8;
   --bg: #ffffff;
-  --text-main: #1e293b;
+  --bg-soft: #f8fafc;
+  --text-main: #0f172a;
   --text-muted: #64748b;
   --border: #e2e8f0;
-  --input-bg: #f8fafc;
+  --radius: 8px;
   --danger: #ef4444;
-  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 }
 
 body {
   font-family:
     "Inter",
     -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    Roboto,
+    system-ui,
     sans-serif;
   background-color: var(--bg);
   color: var(--text-main);
   margin: 0;
-  padding: 16px;
-  line-height: 1.5;
+  width: 340px;
+  -webkit-font-smoothing: antialiased;
 }
 
 .container {
-  width: 300px;
+  padding: 16px;
 }
 
-h1 {
-  font-size: 18px;
+/* Header */
+.app-header {
+  margin-bottom: 20px;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.app-logo {
+  width: 24px;
+  height: 24px;
+}
+
+.brand-name {
+  font-size: 16px;
   font-weight: 800;
-  margin: 0 0 20px 0;
-  letter-spacing: -0.025em;
-  color: var(--text-main);
-  text-align: center;
+  letter-spacing: -0.02em;
+  margin: 0;
 }
 
-/* --- Form Elements --- */
+/* Forms & Inputs */
 .label {
   display: block;
-  font-size: 12px;
-  font-weight: 600;
-  margin-bottom: 6px;
-  color: var(--text-main);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 4px;
   text-transform: uppercase;
-  letter-spacing: 0.025em;
+  letter-spacing: 0.02em;
 }
 
 .input {
   width: 100%;
   box-sizing: border-box;
-  padding: 10px 12px;
+  padding: 9px 12px;
   font-size: 13px;
   border: 1px solid var(--border);
-  border-radius: 8px;
-  background-color: var(--input-bg);
-  transition: all 0.2s ease;
+  border-radius: var(--radius);
+  background: var(--bg-soft);
   margin-bottom: 12px;
+  transition: all 0.2s;
   outline: none;
-  color: var(--text-main);
 }
 
 .input:focus {
   border-color: var(--primary);
-  background-color: #fff;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  background: #fff;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
 }
 
-.input::placeholder {
-  color: #94a3b8;
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
 }
 
-/* --- Buttons --- */
+/* Buttons */
+.button-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
 .button-container {
   display: flex;
   gap: 10px;
 }
 
-.title-container {
-  display: flex;
-  gap: 30px;
-  margin-top: 8px;
-}
-
-.btn {
-  flex: 1;
-  padding: 10px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  border-radius: 8px;
+.btn-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
   border: 1px solid var(--border);
-  background: white;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-#saveCopyBtn {
-  background-color: var(--primary);
-  color: white;
-  border: none;
-  box-shadow: var(--shadow);
-}
-
-#saveCopyBtn:hover {
-  background-color: var(--primary-hover);
-  transform: translateY(-1px);
-}
-
-#saveCopyBtn:active {
-  transform: translateY(0);
-}
-
-#backBtn {
-  background-color: var(--primary);
-  color: white;
-  border: none;
-  box-shadow: var(--shadow);
-}
-
-#backBtn:hover {
-  background-color: var(--primary-hover);
-  transform: translateY(-1px);
-}
-
-#backBtn:active {
-  transform: translateY(0);
-}
-
-#manageBtn {
-  background-color: var(--primary);
-  color: white;
-  border: none;
-  box-shadow: var(--shadow);
-  margin: auto;
-  padding: 10px;
-}
-
-#manageBtn:hover {
-  background-color: var(--primary-hover);
-  transform: translateY(-1px);
-}
-
-#manageBtn:active {
-  transform: translateY(0);
-}
-
-#copyTsvBtn {
-  background-color: #fff;
-  color: var(--text-main);
-}
-
-#copyTsvBtn:hover {
-  background-color: var(--input-bg);
-  border-color: var(--text-muted);
-}
-
-/* --- Status & Dividers --- */
-.status {
-  margin-top: 14px;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--primary);
-  height: 18px;
-  text-align: center;
-}
-
-.divider {
-  margin: 20px 0;
-  border: none;
-  border-top: 1px solid var(--border);
-}
-
-.section-title {
-  font-size: 14px;
-  font-weight: 700;
-  margin-bottom: 12px;
-  color: var(--text-main);
-}
-
-/* --- History List --- */
-.history-item {
-  display: flex;
-  max-width: 360px;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px;
-  background: var(--input-bg);
-  border-radius: 10px;
-  margin-bottom: 8px;
-  border: 1px solid var(--border);
-  transition: transform 0.2s ease;
-}
-
-.history-item:hover {
-  border-color: var(--primary);
   background: #fff;
 }
 
+.btn-circle:hover {
+  background: var(--bg-alt);
+  border-color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-circle:hover {
+}
+
+.btn {
+  width: 100%;
+  padding: 11px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
+}
+
+.btn-secondary {
+  background: #fff;
+  border: 1px solid var(--border);
+  color: var(--text-main);
+}
+
+.btn-secondary:hover {
+  background: var(--bg-soft);
+  border-color: var(--text-muted);
+}
+
+.text-link {
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+/* --- Internship Cards (The "Items") --- */
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: all 0.2s;
+  box-shadow: var(--shadow-sm);
+}
+
 .history-content {
-  overflow: hidden;
+  flex: 1;
+  min-width: 0; /* Prevents overflow */
   padding-right: 8px;
 }
 
+/* Hover effect for manage view */
+#manageList .history-item:hover,
+#history .history-item:hover {
+  cursor: pointer;
+  border-color: var(--primary);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
 .history-company {
+  display: block;
   font-weight: 700;
-  font-size: 13px;
+  font-size: 13.5px;
   color: var(--text-main);
-  white-space: nowrap;
+  margin-bottom: 2px;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .history-role {
-  font-size: 12px;
+  display: block;
+  font-size: 11.5px;
   color: var(--text-muted);
-  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .delete-btn {
@@ -244,10 +232,76 @@ h1 {
   background: #fef2f2;
 }
 
-.muted {
-  color: var(--text-muted);
-  font-size: 13px;
+/* Navigation & View Transitions */
+.view-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.btn-back {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.view-title {
+  font-size: 15px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.scrollable {
+  max-height: 360px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+/* Scrollbar Styling */
+.scrollable::-webkit-scrollbar {
+  width: 4px;
+}
+.scrollable::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 16px 0;
+}
+
+.status-msg {
   text-align: center;
-  margin-top: 10px;
-  font-style: italic;
+  font-size: 12px;
+  color: var(--primary);
+  margin: 12px 0 0;
+  font-weight: 600;
+  min-height: 18px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.section-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin: 0;
+}
+
+.full-width {
+  width: 100%;
 }

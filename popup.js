@@ -4,13 +4,11 @@
 
 const STORAGE_KEY = "internships";
 
-// get saved internships dictionary (keyed by url)
 async function getAllInternships() {
   const result = await chrome.storage.local.get([STORAGE_KEY]);
   return result[STORAGE_KEY] || {};
 }
 
-// save a new internship (dedupe by url)
 async function saveInternship(entry) {
   const all = await getAllInternships();
 
@@ -20,33 +18,38 @@ async function saveInternship(entry) {
   const duplicate = Boolean(all[url]);
   if (duplicate) return { saved: false, duplicate: true };
 
-  entry.createdAt = Date.now();
+  entry.createdAt = Date.now(); // set once only
   all[url] = entry;
 
-  await chrome.storage.local.set({
-    [STORAGE_KEY]: all,
-  });
+  await chrome.storage.local.set({ [STORAGE_KEY]: all });
 
   return { saved: true, duplicate: false };
 }
 
-// delete internship by url
 async function deleteInternship(url) {
   const all = await getAllInternships();
   delete all[url];
 
-  await chrome.storage.local.set({
-    [STORAGE_KEY]: all,
-  });
+  await chrome.storage.local.set({ [STORAGE_KEY]: all });
 
   return all;
+}
+
+// update internship fields
+async function updateInternship(url, patch) {
+  const all = await getAllInternships();
+  if (!all[url]) return false;
+
+  all[url] = { ...all[url], ...patch };
+
+  await chrome.storage.local.set({ [STORAGE_KEY]: all });
+  return true;
 }
 
 // ==============================
 // chrome helpers
 // ==============================
 
-// get the currently active browser tab
 async function getActiveTab() {
   const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
   return tabs[0];
@@ -56,17 +59,16 @@ async function getActiveTab() {
 // extraction (runs in job page)
 // ==============================
 
-// extract role + company from job posting page
 function extractJobInfoFromPage() {
   const url = window.location.href;
   const { hostname, pathname } = window.location;
 
-  // role: prefer h1, fallback to page title
+  // ROLE
   const h1 = document.querySelector("h1");
   const roleFromH1 = h1 ? h1.innerText.trim() : "";
   const role = roleFromH1 || document.title.trim();
 
-  // company: detect common job boards by url pattern
+  // COMPANY
   let company = "";
   const firstPathSegment = pathname.split("/").filter(Boolean)[0] || "";
 
@@ -75,7 +77,6 @@ function extractJobInfoFromPage() {
     company = firstPathSegment;
   else if (hostname.includes("jobs.ashbyhq.com")) company = firstPathSegment;
   else {
-    // fallback: derive company name from hostname
     const pieces = hostname.split(".").filter(Boolean);
 
     const blacklist = new Set([
@@ -91,22 +92,19 @@ function extractJobInfoFromPage() {
     company = filtered[0] || pieces[0] || "";
   }
 
-  // basic formatting
   company = company ? company[0].toUpperCase() + company.slice(1) : "";
 
   return { role, company, url };
 }
 
 // ==============================
-// utils (formatting / exporting)
+// utils
 // ==============================
 
-// current date in yyyy-mm-dd
 function getTodayYYYYMMDD() {
   return new Date().toISOString().split("T")[0];
 }
 
-// make a value safe for tsv (no tabs/newlines)
 function cleanTSVField(value) {
   return String(value || "")
     .replace(/\t/g, " ")
@@ -114,14 +112,11 @@ function cleanTSVField(value) {
     .trim();
 }
 
-// remove tracking bits from url to improve duplicate detection
 function normalizeUrl(url) {
   if (!url) return "";
 
-  // remove hash (#something)
   url = url.split("#")[0];
 
-  // remove utm_* tracking params
   const [base, query] = url.split("?");
   if (!query) return base;
 
@@ -132,54 +127,38 @@ function normalizeUrl(url) {
   return keptParams.length ? `${base}?${keptParams.join("&")}` : base;
 }
 
-// build one spreadsheet-ready tsv row
+// column order
+// Company | Role | Location | URL | Date Added | Status
 function buildTSVRow({ company, role, location, url, dateAdded, status }) {
   const cols = [
     cleanTSVField(company),
     cleanTSVField(role),
-    cleanTSVField(dateAdded),
     cleanTSVField(location),
     cleanTSVField(url),
+    cleanTSVField(dateAdded),
     cleanTSVField(status),
   ];
   return cols.join("\t");
 }
 
-// build multiline tsv (one row per line)
 function buildAllTSV(entries) {
   return entries.map(buildTSVRow).join("\n");
 }
 
 // ==============================
-// popup ui helpers
+// rendering
 // ==============================
 
-// grab popup elements once
-function getEls() {
-  return {
-    company: document.getElementById("company"),
-    role: document.getElementById("role"),
-    location: document.getElementById("location"),
-    date: document.getElementById("date"),
-    status: document.getElementById("statusSelect"),
-    url: document.getElementById("url"),
-    saveBtn: document.getElementById("saveCopyBtn"),
-    msg: document.getElementById("msg"),
-    copyTsvBtn: document.getElementById("copyTsvBtn"),
-  };
+function sortNewestFirst(entries) {
+  const key = (e) => e.createdAt || 0;
+  return entries.sort((a, b) => key(b) - key(a));
 }
 
-// render last 5 saved internships in the popup
 function renderHistory(internships) {
   const historyEl = document.getElementById("history");
+  if (!historyEl) return;
 
-  const entries = Object.values(internships);
-
-  const getCreatedAt = (e) => e.createdAt || 0;
-
-  // sort newest first
-  entries.sort((a, b) => getCreatedAt(b) - getCreatedAt(a));
-
+  const entries = sortNewestFirst(Object.values(internships));
   const lastFive = entries.slice(0, 5);
 
   if (lastFive.length === 0) {
@@ -188,54 +167,132 @@ function renderHistory(internships) {
   }
 
   historyEl.innerHTML = lastFive
-    .map((e) => {
-      return `
-        <div class="history-item">
-          <div class="history-content">
-            <div class="history-company">${e.company}</div>
-            <div class="history-role">${e.role}</div>
-          </div>
-          <button class="delete-btn" data-url="${e.url}">Delete</button>
+    .map(
+      (e) => `
+      <div class="history-item">
+        <div class="history-content edit-card" data-url="${e.url}">
+          <div class="history-company">${e.company}</div>
+          <div class="history-role">${e.role}</div>
         </div>
-      `;
-    })
+        <button class="delete-btn" data-url="${e.url}">Delete</button>
+      </div>
+    `,
+    )
     .join("");
 }
 
-// render all internships
-function renderAll(internships) {
+function renderAll(internships, searchTerm = "") {
   const manageList = document.getElementById("manageList");
+  if (!manageList) return;
 
-  const entries = Object.values(internships);
+  let entries = sortNewestFirst(Object.values(internships));
 
-  const getCreatedAt = (e) => e.createdAt || 0;
+  if (searchTerm.trim()) {
+    const q = searchTerm.trim().toLowerCase();
+    entries = entries.filter((e) => {
+      const blob =
+        `${e.company} ${e.role} ${e.location} ${e.status} ${e.url}`.toLowerCase();
+      return blob.includes(q);
+    });
+  }
 
-  // sort newest first
-  entries.sort((a, b) => getCreatedAt(b) - getCreatedAt(a));
-
-  const all = entries;
-
-  if (all.length === 0) {
-    manageList.innerHTML = `<p class="muted">No saved internships yet.</p>`;
+  if (entries.length === 0) {
+    manageList.innerHTML = `<p class="muted">No matching internships.</p>`;
     return;
   }
 
-  manageList.innerHTML = all
-    .map((e) => {
-      return `
-        <div class="history-item">
-          <div class="history-content">
-            <div class="history-company">${e.company}</div>
-            <div class="history-role">${e.role}</div>
-          </div>
-          <button class="delete-btn" data-url="${e.url}">Delete</button>
+  manageList.innerHTML = entries
+    .map(
+      (e) => `
+      <div class="history-item">
+        <div class="history-content edit-card" data-url="${e.url}">
+          <div class="history-company">${e.company}</div>
+          <div class="history-role">${e.role}</div>
         </div>
-      `;
-    })
+        <button class="delete-btn" data-url="${e.url}">Delete</button>
+      </div>
+    `,
+    )
     .join("");
 }
 
-// autofill company/role/url from the active tab
+function renderEditScreen(entry) {
+  const renderEdit = document.getElementById("render-edit");
+  if (!renderEdit) return;
+
+  const statuses = [
+    "Applied",
+    "Under Consideration",
+    "Rejected",
+    "Interviewing",
+    "Offer",
+  ];
+
+  renderEdit.innerHTML = `
+    <label class="label">Company</label>
+    <input id="editCompany" class="input" type="text" value="${entry.company || ""}" />
+
+    <label class="label">Role</label>
+    <input id="editRole" class="input" type="text" value="${entry.role || ""}" />
+
+    <label class="label">Location</label>
+    <input id="editLocation" class="input" type="text" value="${entry.location || ""}" />
+
+    <label class="label">Status</label>
+    <select id="editStatus" class="input">
+      ${statuses
+        .map(
+          (s) =>
+            `<option value="${s}" ${entry.status === s ? "selected" : ""}>${s}</option>`,
+        )
+        .join("")}
+    </select>
+
+    <label class="label">Application Date</label>
+    <input id="editDate" class="input" type="date" value="${entry.dateAdded || ""}" />
+
+    <label class="label">URL</label>
+    <input id="editUrl" class="input" type="text" value="${entry.url || ""}" disabled />
+  `;
+}
+
+// ==============================
+// ui flow
+// ==============================
+
+function showView(id) {
+  const ids = ["view-main", "view-manage", "view-edit"];
+  for (const vid of ids) {
+    const el = document.getElementById(vid);
+    if (el) el.style.display = "none";
+  }
+
+  const active = document.getElementById(id);
+  if (active) active.style.display = "block";
+}
+
+function getEls() {
+  return {
+    company: document.getElementById("company"),
+    role: document.getElementById("role"),
+    location: document.getElementById("location"),
+    date: document.getElementById("date"),
+    status: document.getElementById("statusSelect"),
+    url: document.getElementById("url"),
+
+    saveBtn: document.getElementById("saveCopyBtn"),
+    copyTsvBtn: document.getElementById("copyTsvBtn"),
+
+    msg: document.getElementById("msg"),
+
+    manageBtn: document.getElementById("manageBtn"),
+    backToMainBtn: document.getElementById("backToMainBtn"),
+    backToManageBtn: document.getElementById("backToManageBtn"),
+    saveEditBtn: document.getElementById("saveEditBtn"),
+    searchManage: document.getElementById("searchManage"),
+  };
+}
+
 async function autofillFromPage(els) {
   const tab = await getActiveTab();
   els.url.value = tab.url;
@@ -253,7 +310,6 @@ async function autofillFromPage(els) {
   els.url.value = info.url || tab.url;
 }
 
-// read inputs and build entry object
 function buildEntryFromInputs(els) {
   return {
     company: els.company.value.trim(),
@@ -265,101 +321,149 @@ function buildEntryFromInputs(els) {
   };
 }
 
-// refresh popup history ui
-async function refreshHistory() {
+async function refreshAllUi(searchTerm = "") {
   const all = await getAllInternships();
   renderHistory(all);
-  renderAll(all);
-}
-
-function showView(id) {
-  document.getElementById("view-main").style.display = "none";
-  document.getElementById("view-manage").style.display = "none";
-  document.getElementById(id).style.display = "block";
-}
-
-async function handleDeleteClick(e, els) {
-  const btn = e.target.closest(".delete-btn");
-  if (!btn) return;
-
-  const url = btn.dataset.url;
-
-  const all = await deleteInternship(url);
-  renderHistory(all);
-  renderAll(all);
-
-  els.msg.textContent = "Deleted ✅";
+  renderAll(all, searchTerm);
 }
 
 // ==============================
-// init + event handlers
+// init
 // ==============================
 
 async function init() {
   const els = getEls();
+  let selectedUrl = null;
 
   await autofillFromPage(els);
-  await refreshHistory();
+  await refreshAllUi();
 
-  els.msg.textContent = "Company + Role + Application Date + URL loaded";
+  if (els.msg)
+    els.msg.textContent = "Company + Role + Application Date + URL loaded";
 
-  els.manageBtn = document.getElementById("manageBtn");
-  els.backBtn = document.getElementById("backBtn");
+  // navigate views
+  els.manageBtn?.addEventListener("click", () => showView("view-manage"));
+  els.backToMainBtn?.addEventListener("click", () => showView("view-main"));
+  els.backToManageBtn?.addEventListener("click", () => showView("view-manage"));
 
-  // manage btn / back btn handler
-  els.manageBtn.addEventListener("click", () => showView("view-manage"));
-  els.backBtn.addEventListener("click", () => showView("view-main"));
+  // search filter manage view
+  els.searchManage?.addEventListener("input", async () => {
+    await refreshAllUi(els.searchManage.value);
+  });
 
-  // delete button handler for last 5 list (event delegation)
+  // last 5 list: delete + edit handler
   const historyEl = document.getElementById("history");
-  historyEl.addEventListener("click", async (e) => {
-    await handleDeleteClick(e, els);
-  });
+  historyEl?.addEventListener("click", async (e) => {
+    // delete
+    const deleteBtn = e.target.closest(".delete-btn");
+    if (deleteBtn) {
+      const url = deleteBtn.dataset.url;
+      await deleteInternship(url);
 
-  // delete button handler for manage list (event delegation)
-  const manageList = document.getElementById("manageList");
-  manageList.addEventListener("click", async (e) => {
-    await handleDeleteClick(e, els);
-  });
+      await refreshAllUi(els.searchManage?.value || "");
+      if (els.msg) els.msg.textContent = "Deleted ✅";
+    }
 
-  // copy all tsv handler
-  els.copyTsvBtn.addEventListener("click", async () => {
+    // edit
+    const card = e.target.closest(".edit-card");
+    if (!card) return;
+
+    selectedUrl = card.dataset.url;
+
     const all = await getAllInternships();
-    const entries = Object.values(all);
+    const entry = all[selectedUrl];
+    if (!entry) return;
 
-    if (entries.length === 0) {
-      els.msg.textContent = "No internships saved yet.";
+    renderEditScreen(entry);
+    showView("view-edit");
+  });
+
+  // manage list: delete + edit click
+  const manageList = document.getElementById("manageList");
+  manageList?.addEventListener("click", async (e) => {
+    // delete
+    const deleteBtn = e.target.closest(".delete-btn");
+    if (deleteBtn) {
+      const url = deleteBtn.dataset.url;
+      await deleteInternship(url);
+
+      await refreshAllUi(els.searchManage?.value || "");
+      if (els.msg) els.msg.textContent = "Deleted ✅";
       return;
     }
 
-    // sort newest first
-    const getCreatedAt = (e) => e.createdAt || 0;
-    entries.sort((a, b) => getCreatedAt(b) - getCreatedAt(a));
+    // edit
+    const card = e.target.closest(".edit-card");
+    if (!card) return;
+
+    selectedUrl = card.dataset.url;
+
+    const all = await getAllInternships();
+    const entry = all[selectedUrl];
+    if (!entry) return;
+
+    renderEditScreen(entry);
+    showView("view-edit");
+  });
+
+  // save edit
+  els.saveEditBtn?.addEventListener("click", async () => {
+    if (!selectedUrl) return;
+
+    const patch = {
+      company: document.getElementById("editCompany").value.trim(),
+      role: document.getElementById("editRole").value.trim(),
+      location: document.getElementById("editLocation").value.trim(),
+      status: document.getElementById("editStatus").value.trim(),
+      dateAdded: document.getElementById("editDate").value.trim(),
+    };
+
+    await updateInternship(selectedUrl, patch);
+
+    await refreshAllUi(els.searchManage?.value || "");
+    if (els.msg) els.msg.textContent = "Updated ✅";
+
+    showView("view-manage");
+  });
+
+  // copy all TSV
+  els.copyTsvBtn?.addEventListener("click", async () => {
+    const all = await getAllInternships();
+    const entries = sortNewestFirst(Object.values(all));
+
+    if (entries.length === 0) {
+      if (els.msg) els.msg.textContent = "No internships saved yet.";
+      return;
+    }
 
     const allTsv = buildAllTSV(entries);
     await navigator.clipboard.writeText(allTsv);
 
-    els.msg.textContent = `Copied ${entries.length} rows ✅`;
+    if (els.msg) els.msg.textContent = `Copied ${entries.length} rows ✅`;
   });
 
-  // save + copy handler
-  els.saveBtn.addEventListener("click", async () => {
+  // save + copy single
+  els.saveBtn?.addEventListener("click", async () => {
     const entry = buildEntryFromInputs(els);
 
     if (!entry.company || !entry.role || !entry.url) {
-      els.msg.textContent = "Missing Company, Role, or URL.";
+      if (els.msg) els.msg.textContent = "Missing Company, Role, or URL.";
       return;
     }
 
     const saveResult = await saveInternship(entry);
 
+    // always copy row
     const tsvRow = buildTSVRow(entry);
     await navigator.clipboard.writeText(tsvRow);
-    await refreshHistory();
 
-    els.msg.textContent = saveResult.duplicate
-      ? "Already saved — copied again ✅"
-      : "Saved and copied ✅";
+    await refreshAllUi(els.searchManage?.value || "");
+
+    if (els.msg) {
+      els.msg.textContent = saveResult.duplicate
+        ? "Already saved — copied again ✅"
+        : "Saved and copied ✅";
+    }
   });
 }
 
