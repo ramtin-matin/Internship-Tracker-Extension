@@ -328,6 +328,77 @@ async function refreshAllUi(searchTerm = "") {
 }
 
 // ==============================
+// disable buttons until valid
+// ==============================
+
+function setButtonEnabled(btn, enabled) {
+  if (!btn) return;
+  btn.disabled = !enabled;
+}
+
+async function updateSaveButtonState(els) {
+  const company = els.company?.value.trim();
+  const role = els.role?.value.trim();
+  const url = normalizeUrl(els.url?.value.trim());
+
+  const hasRequired = Boolean(company && role && url);
+
+  if (!hasRequired) {
+    setButtonEnabled(els.saveBtn, false);
+    return;
+  }
+
+  // disable if already saved
+  const all = await getAllInternships();
+  const duplicate = Boolean(all[url]);
+
+  setButtonEnabled(els.saveBtn, !duplicate);
+}
+
+function computeEditPatchFromDom() {
+  return {
+    company: document.getElementById("editCompany")?.value.trim() || "",
+    role: document.getElementById("editRole")?.value.trim() || "",
+    location: document.getElementById("editLocation")?.value.trim() || "",
+    status: document.getElementById("editStatus")?.value.trim() || "",
+    dateAdded: document.getElementById("editDate")?.value.trim() || "",
+  };
+}
+
+function isPatchDifferentFromEntry(entry, patch) {
+  return (
+    (entry.company || "") !== patch.company ||
+    (entry.role || "") !== patch.role ||
+    (entry.location || "") !== patch.location ||
+    (entry.status || "") !== patch.status ||
+    (entry.dateAdded || "") !== patch.dateAdded
+  );
+}
+
+function wireEditDisableUntilChange(entry, els) {
+  // start disabled
+  setButtonEnabled(els.saveEditBtn, false);
+
+  const handler = () => {
+    const patch = computeEditPatchFromDom();
+    const changed = isPatchDifferentFromEntry(entry, patch);
+    setButtonEnabled(els.saveEditBtn, changed);
+  };
+
+  ["editCompany", "editRole", "editLocation", "editStatus", "editDate"].forEach(
+    (id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener("input", handler);
+      el.addEventListener("change", handler);
+    },
+  );
+
+  // initial check
+  handler();
+}
+
+// ==============================
 // init
 // ==============================
 
@@ -340,6 +411,18 @@ async function init() {
 
   if (els.msg)
     els.msg.textContent = "Company + Role + Application Date + URL loaded";
+
+  // disable save until valid
+  setButtonEnabled(els.saveBtn, false);
+  await updateSaveButtonState(els);
+
+  // re-check save button state on input
+  [els.company, els.role, els.url].forEach((input) => {
+    if (!input) return;
+    input.addEventListener("input", async () => {
+      await updateSaveButtonState(els);
+    });
+  });
 
   // navigate views
   els.manageBtn?.addEventListener("click", () => showView("view-manage"));
@@ -361,33 +444,8 @@ async function init() {
       await deleteInternship(url);
 
       await refreshAllUi(els.searchManage?.value || "");
-      if (els.msg) els.msg.textContent = "Deleted ✅";
-    }
+      await updateSaveButtonState(els);
 
-    // edit
-    const card = e.target.closest(".edit-card");
-    if (!card) return;
-
-    selectedUrl = card.dataset.url;
-
-    const all = await getAllInternships();
-    const entry = all[selectedUrl];
-    if (!entry) return;
-
-    renderEditScreen(entry);
-    showView("view-edit");
-  });
-
-  // manage list: delete + edit click
-  const manageList = document.getElementById("manageList");
-  manageList?.addEventListener("click", async (e) => {
-    // delete
-    const deleteBtn = e.target.closest(".delete-btn");
-    if (deleteBtn) {
-      const url = deleteBtn.dataset.url;
-      await deleteInternship(url);
-
-      await refreshAllUi(els.searchManage?.value || "");
       if (els.msg) els.msg.textContent = "Deleted ✅";
       return;
     }
@@ -404,23 +462,55 @@ async function init() {
 
     renderEditScreen(entry);
     showView("view-edit");
+
+    // disable save changes until something changes
+    wireEditDisableUntilChange(entry, els);
+  });
+
+  // manage list: delete + edit click
+  const manageList = document.getElementById("manageList");
+  manageList?.addEventListener("click", async (e) => {
+    // delete
+    const deleteBtn = e.target.closest(".delete-btn");
+    if (deleteBtn) {
+      const url = deleteBtn.dataset.url;
+      await deleteInternship(url);
+
+      await refreshAllUi(els.searchManage?.value || "");
+      await updateSaveButtonState(els);
+
+      if (els.msg) els.msg.textContent = "Deleted ✅";
+      return;
+    }
+
+    // edit
+    const card = e.target.closest(".edit-card");
+    if (!card) return;
+
+    selectedUrl = card.dataset.url;
+
+    const all = await getAllInternships();
+    const entry = all[selectedUrl];
+    if (!entry) return;
+
+    renderEditScreen(entry);
+    showView("view-edit");
+
+    // disable save changes until something changes
+    wireEditDisableUntilChange(entry, els);
   });
 
   // save edit
   els.saveEditBtn?.addEventListener("click", async () => {
     if (!selectedUrl) return;
 
-    const patch = {
-      company: document.getElementById("editCompany").value.trim(),
-      role: document.getElementById("editRole").value.trim(),
-      location: document.getElementById("editLocation").value.trim(),
-      status: document.getElementById("editStatus").value.trim(),
-      dateAdded: document.getElementById("editDate").value.trim(),
-    };
+    const patch = computeEditPatchFromDom();
 
     await updateInternship(selectedUrl, patch);
 
     await refreshAllUi(els.searchManage?.value || "");
+    await updateSaveButtonState(els);
+
     if (els.msg) els.msg.textContent = "Updated ✅";
 
     showView("view-manage");
@@ -453,11 +543,11 @@ async function init() {
 
     const saveResult = await saveInternship(entry);
 
-    // always copy row
     const tsvRow = buildTSVRow(entry);
     await navigator.clipboard.writeText(tsvRow);
 
     await refreshAllUi(els.searchManage?.value || "");
+    await updateSaveButtonState(els);
 
     if (els.msg) {
       els.msg.textContent = saveResult.duplicate

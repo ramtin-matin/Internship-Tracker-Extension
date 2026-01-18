@@ -150,6 +150,25 @@ body {
   border-color: var(--text-muted);
 }
 
+/* disabled button styling */
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* make sure primary button still looks correct when disabled */
+#saveCopyBtn:disabled {
+  background-color: var(--primary);
+  color: white;
+}
+
+#saveEditBtn:disabled {
+  background-color: var(--primary);
+  color: white;
+}
+
 .text-link {
   background: none;
   border: none;
