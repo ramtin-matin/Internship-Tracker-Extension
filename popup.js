@@ -445,7 +445,7 @@ async function init() {
       await refreshAllUi(els.searchManage?.value || "");
       await updateSaveButtonState(els);
 
-      if (els.msg) els.msg.textContent = "Deleted ✅";
+      if (els.msg) els.msg.textContent = "Deleted!";
       return;
     }
 
@@ -478,7 +478,7 @@ async function init() {
       await refreshAllUi(els.searchManage?.value || "");
       await updateSaveButtonState(els);
 
-      if (els.msg) els.msg.textContent = "Deleted ✅";
+      if (els.msg) els.msg.textContent = "Deleted!";
       return;
     }
 
@@ -510,7 +510,7 @@ async function init() {
     await refreshAllUi(els.searchManage?.value || "");
     await updateSaveButtonState(els);
 
-    if (els.msg) els.msg.textContent = "Updated ✅";
+    if (els.msg) els.msg.textContent = "Updated!";
 
     showView("view-manage");
   });
@@ -532,7 +532,11 @@ async function init() {
     const allTsv = buildAllTSV(entries);
     await navigator.clipboard.writeText(allTsv);
 
-    if (els.msg) els.msg.textContent = `Copied ${entries.length} rows ✅`;
+    if (els.msg && entries.length > 1) {
+      els.msg.textContent = `Copied ${entries.length} rows!`;
+    } else if (els.msg && entries.length == 1) {
+      els.msg.textContent = `Copied ${entries.length} row!`;
+    }
   });
 
   // save + copy single
@@ -554,8 +558,8 @@ async function init() {
 
     if (els.msg) {
       els.msg.textContent = saveResult.duplicate
-        ? "Already saved — copied again ✅"
-        : "Saved and copied ✅";
+        ? "Already saved — copied again!"
+        : "Saved and copied!";
     }
   });
 }
