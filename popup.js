@@ -196,7 +196,7 @@ function renderAll(internships, searchTerm = "") {
   }
 
   if (entries.length === 0) {
-    manageList.innerHTML = `<p class="muted">No matching internships.</p>`;
+    manageList.innerHTML = `<p class="muted">No saved internships yet.</p>`;
     return;
   }
 
