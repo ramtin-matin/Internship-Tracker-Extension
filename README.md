@@ -1,6 +1,6 @@
-# Internship-Tracker-Extension
+# OfferTrail
 
-A simple Chrome extension to help you track internship applications. It lets you save application details and quickly copy them as Tab-Separated Value (TSV) rows, good for pasting into a spreadsheet.
+A simple Chrome extension to help you track job applications. It lets you save application details and quickly copy them as Tab-Separated Value (TSV) rows, good for pasting into a spreadsheet.
 
 ## Features
 
@@ -34,12 +34,12 @@ The extension consists of a popup UI and a content script that runs on web pages
 3.  Enable "Developer mode" using the toggle switch (usually in the top-right corner).
 4.  Click the "Load unpacked" button.
 5.  Select the directory where you cloned/downloaded this repository.
-6.  The Internship Tracker extension icon will appear in your browser's toolbar.
+6.  The OfferTrail extension icon will appear in your browser's toolbar.
 
 ### Tracking an Application
 
 1.  Navigate to a job posting you want to save.
-2.  Click the Internship Tracker extension icon in your toolbar.
+2.  Click the OfferTrail extension icon in your toolbar.
 3.  The popup will appear, with the Company, Role, and URL fields automatically filled. (although for now Role isn't accurately filled, so double check)
 4.  Verify the auto-filled information and fill in the remaining fields (Location, Status). The date is automatically set to today.
 5.  Click **Save + Copy**. The application is now saved, and a TSV row is copied to your clipboard.

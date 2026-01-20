@@ -161,7 +161,7 @@ function renderHistory(internships) {
   const lastFive = entries.slice(0, 5);
 
   if (lastFive.length === 0) {
-    historyEl.innerHTML = `<p class="muted">No saved internships yet.</p>`;
+    historyEl.innerHTML = `<p class="muted">No saved entries yet.</p>`;
     return;
   }
 
@@ -196,7 +196,7 @@ function renderAll(internships, searchTerm = "") {
   }
 
   if (entries.length === 0) {
-    manageList.innerHTML = `<p class="muted">No saved internships yet.</p>`;
+    manageList.innerHTML = `<p class="muted">No saved entries yet.</p>`;
     return;
   }
 
@@ -525,7 +525,7 @@ async function init() {
     entries.sort((a, b) => key(a) - key(b));
 
     if (entries.length === 0) {
-      if (els.msg) els.msg.textContent = "No internships saved yet.";
+      if (els.msg) els.msg.textContent = "No entries saved yet.";
       return;
     }
 
