@@ -1,5 +1,7 @@
 # OfferTrail
 
+https://chromewebstore.google.com/detail/OfferTrail/ncgopceepkaecgillgmdolbnbacibdgg
+
 A simple Chrome extension to help you track job applications. It lets you save application details and quickly copy them as Tab-Separated Value (TSV) rows, good for pasting into a spreadsheet.
 
 ## Features
